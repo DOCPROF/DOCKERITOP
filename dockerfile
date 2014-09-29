@@ -51,6 +51,6 @@ EXPOSE 3306
 # Port APACHE
 EXPOSE 80
 
-
+# Démarrage des services
 CMD ["/usr/bin/mysqld_safe"]
 CMD ["/usr/sbin/apache2", "-D", "FOREGROUND"] 
