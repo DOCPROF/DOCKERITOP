@@ -18,12 +18,12 @@ RUN mkdir -p /tmp/itop
 RUN wget -O /tmp/itop/itop.zip http://sourceforge.net/projects/itop/files/itop/2.2.0/iTop-2.2.0-2459.zip
 RUN unzip /tmp/itop/itop.zip -d /tmp/itop/
 
-# Configure /app folder with iTop
+# Configure /app 
 RUN rm -fr /app
 RUN mkdir -p /app && cp -r /tmp/itop/web/* /app && rm -rf /tmp/itop
 RUN chown -R www-data:www-data /app
 
-#Enviornment variables to configure php
+#Environment variables
 ENV PHP_UPLOAD_MAX_FILESIZE 8M
 ENV PHP_POST_MAX_SIZE 10M
 
