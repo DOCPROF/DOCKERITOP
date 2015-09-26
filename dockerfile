@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM tutum/lamp:latest
 MAINTAINER Jean Lasson <jean.lasson@free.fr>
 
 # Tout en Français
@@ -8,42 +8,24 @@ ENV LC_ALL fr_FR.UTF-8
 RUN locale-gen fr_FR.UTF-8
 RUN dpkg-reconfigure locales
 
-# Variables
-ENV APACHE_RUN_USER www-data
-ENV APACHE_RUN_GROUP www-data
-ENV APACHE_LOG_DIR /var/log/apache2
-
-# Mise à jour
-RUN apt-get update
-RUN apt-get -y upgrade
-
 # Installation des packages nécessaires
-RUN apt-get -y install apache2 mysql-server php5 php5-mysql php5-ldap php5-mcrypt php5-cli php5-soap && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Options PHP
-RUN apt-get -y install php5-curl php5-gd php5-intl php-pear php5-imagick php5-imap php5-mcrypt php5-memcache php5-ming php5-ps php5-pspell php5-recode php5-tidy php5-xmlrpc php5-xsl
-
-# MySQL
-# Config : Autoriser les connexions remote
-RUN sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysql/my.cnf
-# Creation de la DATABASE et de l'Utilisateur
-RUN /usr/bin/mysqld_safe & \
-                    sleep 10s &&\
-                    echo "CREATE DATABASE ITOP;" | mysql &&\
-                    echo "GRANT ALL ON *.* TO admin@'%' IDENTIFIED BY ''; FLUSH PRIVILEGES" | mysql
+RUN apt-get update && \
+  apt-get -y install php5-mcrypt php5-gd php5-ldap php5-cli php-soap php5-json graphviz wget unzip
+RUN php5enmod mcrypt ldap gd
 
 # récupération de la version ITOP
-RUN wget http://sourceforge.net/projects/itop/files/itop/2.0.3/iTop-2.0.3-1916.zip
-RUN unzip iTop-2.0.2-1476.zip
-RUN cp -fr web/ /var/www/itop
-RUN mkdir /var/www/itop/conf
-RUN mkdir /var/www/itop/data
-RUN mkdir /var/www/itop/env-production
-RUN mkdir /var/www/itop/log
-RUN chmod 777 /var/www/itop/conf/
-RUN chmod 777 /var/www/itop/data
-RUN chmod 777 /var/www/itop/env-production/
-RUN chmod 777 /var/www/itop/log
+RUN mkdir -p /tmp/itop
+RUN wget -O /tmp/itop/itop.zip http://sourceforge.net/projects/itop/files/itop/2.2.0/iTop-2.2.0-2459.zip
+RUN unzip /tmp/itop/itop.zip -d /tmp/itop/
+
+# Configure /app folder with iTop
+RUN rm -fr /app
+RUN mkdir -p /app && cp -r /tmp/itop/web/* /app && rm -rf /tmp/itop
+RUN chown -R www-data:www-data /app
+
+#Enviornment variables to configure php
+ENV PHP_UPLOAD_MAX_FILESIZE 8M
+ENV PHP_POST_MAX_SIZE 10M
 
 # Expose ports
 # Port MYSQL
@@ -51,6 +33,5 @@ EXPOSE 3306
 # Port APACHE
 EXPOSE 80
 
-# Démarrage des services
-CMD ["/usr/bin/mysqld_safe"]
-CMD ["/usr/sbin/apache2", "-D", "FOREGROUND"] 
+CMD ["/run.sh"]
+
